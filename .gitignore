@@ -3,3 +3,4 @@ node_modules
 *.txt
 *.LICENSE
 package-lock.json
+task_2/
