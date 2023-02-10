@@ -1,194 +1,139 @@
-import React, { Component } from "react";
-import Notifications from "../Notifications/Notifications";
-import Header from "../Header/Header";
-import BodySection from "../BodySection/BodySection";
-import BodySectionWithMarginBottom from "../BodySection/BodySectionWithMarginBottom";
-import Login from "../Login/Login";
-import CourseList from "../CourseList/CourseList";
-import Footer from "../Footer/Footer";
-import PropTypes from "prop-types";
-import { getLatestNotification } from "../utils/utils";
-import { StyleSheet, css } from "aphrodite";
-import { user, logOut } from "./AppContext";
-import AppContext from "./AppContext";
+import React from 'react';
+import { StyleSheet, css } from 'aphrodite';
+import BodySection from '../BodySection/BodySection';
+import BodySectionWithMarginBottom from '../BodySection/BodySectionWithMarginBottom';
+import Notifications from '../Notifications/Notifications';
+import Login from '../Login/Login';
+import Footer from '../Footer/Footer';
+import Header from '../Header/Header';
+import CourseList from '../CourseList/CourseList';
+import { getLatestNotification } from '../utils/utils';
+import { AppContext, defaultUser } from './AppContext';
 
-const listCourses = [
-  { id: 1, name: "ES6", credit: 60 },
-  { id: 2, name: "Webpack", credit: 20 },
-  { id: 3, name: "React", credit: 40 },
-];
+class App extends React.Component {
+	constructor(props) {
+		super(props);
 
-export const listNotificationsInitialState = [
-  { id: 1, type: "default", value: "New course available" },
-  { id: 2, type: "urgent", value: "New resume available" },
-  { id: 3, type: "urgent", html: { __html: getLatestNotification() } },
-];
+		this.state = {
+			displayDrawer: false,
+			user: defaultUser,
+			logOut: () => {
+				this.setState({ user: defaultUser });
+			},
+			listNotifications: [
+				{ id: 1, type: 'default', value: 'New course available' },
+				{ id: 2, type: 'urgent', value: 'New resume available' },
+				{ id: 3, type: 'default', html: getLatestNotification() },
+			],
+		};
 
-document.body.style.margin = 0;
+		this.handleDisplayDrawer = this.handleDisplayDrawer.bind(this);
+		this.handleHideDrawer = this.handleHideDrawer.bind(this);
+		this.logIn = this.logIn.bind(this);
+		this.markNotificationAsRead = this.markNotificationAsRead.bind(this);
+	}
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    this.handleKeyCombination = this.handleKeyCombination.bind(this);
-    this.handleDisplayDrawer = this.handleDisplayDrawer.bind(this);
-    this.handleHideDrawer = this.handleHideDrawer.bind(this);
-    this.logIn = this.logIn.bind(this);
-    this.logOut = this.logOut.bind(this);
-    this.markNotificationAsRead = this.markNotificationAsRead.bind(this);
-    this.state = {
-      displayDrawer: false,
-      user,
-      logOut: this.logOut,
-      listNotifications: listNotificationsInitialState,
-    };
-  }
+	listCourses = [
+		{ id: 1, name: 'ES6', credit: 60 },
+		{ id: 2, name: 'Webpack', credit: 20 },
+		{ id: 3, name: 'React', credit: 40 },
+	];
 
-  handleKeyCombination(e) {
-    if (e.key === "h" && e.ctrlKey) {
-      alert("Logging you out");
-      this.state.logOut();
-    }
-  }
+	componentDidMount() {
+		document.addEventListener('keydown', (e) => {
+			if (e.ctrlKey && e.key === 'h') {
+				alert('Logging you out');
+				this.state.logOut();
+			}
+		});
+	}
 
-  handleDisplayDrawer() {
-    this.setState({ displayDrawer: true });
-  }
+	componentWillUnmount() {
+		document.removeEventListener('keydown', (e) => {
+			if (e.ctrlKey && e.key === 'h') {
+				alert('Logging you out');
+				this.state.logOut();
+			}
+		});
+	}
 
-  handleHideDrawer() {
-    this.setState({ displayDrawer: false });
-  }
+	handleDisplayDrawer() {
+		this.setState({ displayDrawer: true });
+	}
 
-  logIn(email, password) {
-    this.setState({
-      user: {
-        email,
-        password,
-        isLoggedIn: true,
-      },
-    });
-  }
+	handleHideDrawer() {
+		this.setState({ displayDrawer: false });
+	}
 
-  logOut() {
-    this.setState({ user });
-  }
+	logIn(email, password) {
+		this.setState({
+			user: {
+				email: email,
+				password: password,
+				isLoggedIn: true,
+			},
+		});
+	}
 
-  markNotificationAsRead(id) {
-    this.setState({
-      listNotifications: this.state.listNotifications.filter((notification) => {
-        return notification.id !== id;
-      }),
-    });
-  }
+	markNotificationAsRead(id) {
+		const read = this.state.listNotifications.filter(
+			(notification) => notification.id !== id
+		);
 
-  componentDidMount() {
-    document.addEventListener("keydown", this.handleKeyCombination);
-  }
+		this.setState({ listNotifications: read });
+	}
 
-  componentWillUnmount() {
-    document.removeEventListener("keydown", this.handleKeyCombination);
-  }
-
-  render() {
-    const {
-      user,
-      user: { isLoggedIn },
-      logOut,
-      displayDrawer,
-      listNotifications,
-    } = this.state;
-
-    const value = { user, logOut };
-
-    return (
-      <AppContext.Provider value={value}>
-        <Notifications
-          listNotifications={listNotifications}
-          displayDrawer={displayDrawer}
-          handleDisplayDrawer={this.handleDisplayDrawer}
-          handleHideDrawer={this.handleHideDrawer}
-          markNotificationAsRead={this.markNotificationAsRead}
-        />
-        <div className={css(styles.container)}>
-          <div className={css(styles.app)}>
-            <Header />
-          </div>
-          <div className={css(styles.appBody)}>
-            {!isLoggedIn ? (
-              <BodySectionWithMarginBottom title="Log in to continue">
-                <Login logIn={this.logIn} />
-              </BodySectionWithMarginBottom>
-            ) : (
-              <BodySectionWithMarginBottom title="Course list">
-                <CourseList listCourses={listCourses} />
-              </BodySectionWithMarginBottom>
-            )}
-          </div>
-          <BodySection title="News from the School">
-            <p>
-              Lorem Ipsum is simply dummy text of the printing and typesetting
-              industry. Lorem Ipsum has been the industry's standard dummy text
-              ever since the 1500s, when an unknown printer took a galley of
-              type and scrambled it to make a type specimen book. It has
-              survived not only five centuries, but also the leap into
-              electronic typesetting, remaining essentially unchanged. It was
-              popularised in the 1960s with the release of Letraset sheets
-              containing Lorem Ipsum passages, and more recently with desktop
-              publishing software like Aldus PageMaker including versions of
-              Lorem Ipsum.
-            </p>
-          </BodySection>
-
-          <div className={css(styles.footer)}>
-            <Footer />
-          </div>
-        </div>
-      </AppContext.Provider>
-    );
-  }
+	render() {
+		const { user, logOut } = this.state;
+		return (
+			<AppContext.Provider value={{ user, logOut }}>
+				<div className={css(styles.container, styles.small)}>
+					<Header />
+					<Notifications
+						markNotificationAsRead={this.markNotificationAsRead}
+						listNotifications={this.state.listNotifications}
+						displayDrawer={this.state.displayDrawer}
+						handleDisplayDrawer={this.handleDisplayDrawer}
+						handleHideDrawer={this.handleHideDrawer}
+					/>
+				</div>
+				<hr className={css(styles.hr)} />
+				{this.state.user.isLoggedIn ? (
+					<BodySectionWithMarginBottom>
+						<CourseList listCourses={this.listCourses} />
+					</BodySectionWithMarginBottom>
+				) : (
+					<BodySectionWithMarginBottom>
+						<Login logIn={this.logIn} />
+					</BodySectionWithMarginBottom>
+				)}
+				<BodySection title='News from the School'>
+					<p>
+						Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+						eiusmod tempor incididunt ut labore et dolore magna aliqua.{' '}
+					</p>
+				</BodySection>
+				<hr className={css(styles.hr)} />
+				<Footer />
+			</AppContext.Provider>
+		);
+	}
 }
 
-App.defaultProps = {};
-
-App.propTypes = {};
-
-const cssVars = {
-  mainColor: "#e01d3f",
-};
-
-const screenSize = {
-  small: "@media screen and (max-width: 900px)",
-};
-
 const styles = StyleSheet.create({
-  container: {
-    width: "calc(100% - 16px)",
-    marginLeft: "8px",
-    marginRight: "8px",
-  },
-
-  app: {
-    borderBottom: `3px solid ${cssVars.mainColor}`,
-  },
-
-  appBody: {
-    display: "flex",
-    justifyContent: "center",
-  },
-
-  footer: {
-    borderTop: `3px solid ${cssVars.mainColor}`,
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-    textAlign: "center",
-    position: "fixed",
-    paddingBottom: "10px",
-    bottom: 0,
-    fontStyle: "italic",
-    [screenSize.small]: {
-      position: "static",
-    },
-  },
+	container: {
+		display: 'flex',
+		justifyContent: 'space-between',
+	},
+	hr: {
+		borderTop: '2px solid red',
+	},
+	small: {
+		'@media (max-width: 900px)': {
+			display: 'grid',
+			justifyContent: 'center',
+		},
+	},
 });
 
 export default App;
